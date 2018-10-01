@@ -1,0 +1,9 @@
+# IDE Generated Files #
+.idea
+.code
+
+# Video files #
+*.mp4
+
+# Compiled Python Code #
+*.pyc
