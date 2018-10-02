@@ -36,6 +36,10 @@ if __name__ == '__main__':
     # Open video file, read number of frames
     video = cv2.VideoCapture(video_file)
     total_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
+    if num_frames >= total_frames:
+        raise ValueError('Asked for a {} unique frames. Larger than the {} frames in the video {}.'.format(
+            num_frames, total_frames, video_file
+        ))
 
     # Generate array of random indices in semi-open range [0, total_frames)
     indices = np.random.randint(0, total_frames, num_frames)
