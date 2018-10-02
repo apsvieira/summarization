@@ -15,15 +15,20 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser()
 parser.add_argument('--num_frames',
                     metavar='N',
+                    type=int,
                     help="Number of frames to extract from video")
 parser.add_argument('--video',
                     metavar='video',
                     help="Source video")
+parser.add_argument('--image_format',
+                    choices=['.png', '.jpeg'],
+                    help="Format of the output images")
 
 if __name__ == '__main__':
     opts = parser.parse_args()
     num_frames = int(opts.num_frames)
     video_file = opts.video
+    image_format = opts.image_format
 
     # Path to which extracted images will be saved
     output_path = './images_' + re.sub('\..*', '', video_file)
@@ -46,11 +51,25 @@ if __name__ == '__main__':
     while not np.unique(indices).shape[0] == indices.shape[0]:
         indices = np.random.randint(0, total_frames, num_frames)
 
+    print(indices, total_frames)
     os.chdir(output_path)
-    for i, index in enumerate(tqdm(indices)):
+    for i, index in enumerate(indices):
         video.set(cv2.CAP_PROP_POS_FRAMES, index)
         success, img = video.read()
-        out_img = 'image_' + str(i) + '.png'
+
+        # This is a workaround for dealing with empty images.
+        # This introduces a bias to get the first frames in a video.
+        # TODO understand why some images are empty and how to avoid that
+        count = 0
+        while not success:
+            video.set(cv2.CAP_PROP_POS_FRAMES, np.random.randint(0, indices.min(), 1))
+            success, img = video.read()
+            count += 1
+            if count == 100:
+                break
+
+        out_img = 'image_' + str(i) + image_format
         cv2.imwrite(out_img, img)
+
 
 
