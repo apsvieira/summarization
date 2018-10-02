@@ -12,15 +12,20 @@ parser.add_argument('--frames',
 parser.add_argument('--image_format',
                     choices=['.png', '.jpeg'],
                     help="Format of the output images")
+parser.add_argument('--num_processes',
+                    type=int,
+                    default=10,
+                    help="Maximum number of running parallel processes")
 
 if __name__ == '__main__':
     opts = parser.parse_args()
     num_frames = opts.frames
     image_format = opts.image_format
+    multiprocess_threshold = opts.num_processes
 
     root_path = os.path.abspath(os.curdir)
-    logger = logging.getLogger("Extract Frames from Videos")
-    logger.setLevel('INFO')
+    logger = logging.getLogger("framesFromVideos",)
+    logger.setLevel('DEBUG')
 
     # Get list of directory names in current directory
     all_files = os.scandir()
@@ -29,8 +34,10 @@ if __name__ == '__main__':
     for dir in directories:
         os.chdir(dir)
         all_files = os.scandir()
-        files = [file.name for file in all_files if not file.is_dir() and not file.name.startswith('.')]
+        files = [file.name for file in all_files if not file.is_dir() and not file.name.startswith('.')
+                 and not file.name.endswith('.png') and not file.name.endswith('.jpeg')]
 
+        child_processes = []
         for video in files:
             logger.info("Running frame extraction for video {}".format(video))
             try:
@@ -40,12 +47,19 @@ if __name__ == '__main__':
                            '--image_format={}'.format(image_format),
                            '--video={}'.format(video)],
                           stdout=PIPE)
-                print(p.stdout.read())
-                p.terminate()
+                child_processes.append(p)
             except ValueError as e:
                 logger.error("Couldn't run frame extraction for video {}".format(video))
                 logger.error("Error message: " + e)
                 continue
 
             logger.info("Finished frame extraction for video {}".format(video))
+            # TODO check how to better handle multiple subprocesses
+            if len(child_processes) > multiprocess_threshold:
+                for cp in child_processes:
+                    cp.wait()
+                    child_processes.remove(cp)
+
+        for cp in child_processes:
+            cp.wait()
         os.chdir(root_path)

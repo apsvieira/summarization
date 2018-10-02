@@ -10,7 +10,7 @@ import argparse
 
 import cv2
 import numpy as np
-from tqdm import tqdm
+from unidecode import unidecode
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--num_frames',
@@ -31,15 +31,16 @@ if __name__ == '__main__':
     image_format = opts.image_format
 
     # Path to which extracted images will be saved
-    output_path = './images_' + re.sub('\..*', '', video_file)
-    try:
-        os.mkdir(output_path)
-    except FileExistsError:
-        print("Tried to create a folder that already exists. Moving on without creating new folder.")
-        print("Folder path:", output_path)
+    # output_path = './images'
+    # try:
+    #     os.mkdir(output_path)
+    # except FileExistsError:
+    #     print("Tried to create a folder that already exists. Moving on without creating new folder.")
+    #     print("Folder path:", output_path)
 
     # Open video file, read number of frames
     video = cv2.VideoCapture(video_file)
+    video_name = unidecode(re.sub('\..*', '', video_file).replace(' ', '-'))
     total_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
     if num_frames >= total_frames:
         raise ValueError('Asked for a {} unique frames. Larger than the {} frames in the video {}.'.format(
@@ -51,9 +52,10 @@ if __name__ == '__main__':
     while not np.unique(indices).shape[0] == indices.shape[0]:
         indices = np.random.randint(0, total_frames, num_frames)
 
-    print(indices, total_frames)
-    os.chdir(output_path)
+    # Move to image output directory
+    # os.chdir(output_path)
     for i, index in enumerate(indices):
+        # Set video frame pointer to frame 'index'
         video.set(cv2.CAP_PROP_POS_FRAMES, index)
         success, img = video.read()
 
@@ -68,7 +70,7 @@ if __name__ == '__main__':
             if count == 100:
                 break
 
-        out_img = 'image_' + str(i) + image_format
+        out_img = 'image_' + video_name + "_" + str(i) + image_format
         cv2.imwrite(out_img, img)
 
 
