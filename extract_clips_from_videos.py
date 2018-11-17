@@ -3,6 +3,8 @@ import argparse
 import logging
 import os
 from subprocess import Popen, PIPE
+
+import utils
 # TODO add multiprocessing support
 # TODO add verifications to ensure passed number of frames is correctly extracted
 
@@ -22,14 +24,6 @@ parser.add_argument('--num_processes',
                     help="Maximum number of running parallel processes")
 
 
-def create_folder(path):
-    try:
-        os.mkdir(path)
-    except FileExistsError:
-        print("Tried to create a folder that already exists. Moving on without creating new folder.")
-        print("Folder path:", path)
-
-
 if __name__ == '__main__':
     opts = parser.parse_args()
     num_clips = opts.clips
@@ -45,7 +39,7 @@ if __name__ == '__main__':
     logger = logging.getLogger("framesFromVideos")
     logger.setLevel('DEBUG')
 
-    create_folder(images_path)
+    utils.create_folder(images_path)
 
     # Get list of directory names in current directory
     all_files = os.scandir(videos_path)
@@ -54,22 +48,21 @@ if __name__ == '__main__':
 
     for directory in directories:
         os.chdir(os.path.join(videos_path, directory))
-        create_folder(os.path.join(images_path, directory))
+        utils.create_folder(os.path.join(images_path, directory))
         content = os.scandir()
         videos = [file.name for file in content if not file.is_dir() and not file.name.startswith('.')]
 
         child_processes = []
         for video in videos:
             output_path = os.path.join(images_path, directory, video)
-            create_folder(output_path)
-            logger.debug("-----------------\n" + output_path + "\n---------------------\n")
+            utils.create_folder(output_path)
 
             logger.info("Running frame extraction for video {}".format(video))
 
             # TODO change to call video_to_clip.py script
             try:
                 p = Popen(['python',
-                           os.path.join(root_path, 'video_to_frames.py'),
+                           os.path.join(root_path, 'video_to_clip.py'),
                            '--num_clips={}'.format(num_clips),
                            '--num_frames={}'.format(num_frames),
                            '--image_format={}'.format(image_format),
