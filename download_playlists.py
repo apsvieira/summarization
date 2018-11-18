@@ -12,10 +12,10 @@ parser.add_argument('--playlists',
                     help="File specifying playlists to download",
                     required=True)
 parser.add_argument('--max_per_list',
+                    type=int,
                     help="Maximum number of videos to download from each playlist",
                     default=10)
 parser.add_argument('-s', '--simulate',
-                    type=bool,
                     help="Simulation, do not download or save any data to disk",
                     required=False)
 parser.add_argument('--randomize',
@@ -33,9 +33,8 @@ if __name__ == '__main__':
 
     # Construct argument list for youtube-dl from command line arguments
     standard_commands = ["--yes-playlist", "--id", "--reject-title=\"\[Deleted video\]\"",
-                         "--min-sleep-interval=2", "--max-sleep-interval=7"]
+                         "--min-sleep-interval=2", "--max-sleep-interval=7", "-ciw"]
     standard_commands.append('-s') if opts.simulate is not None else None
-    standard_commands.append("--max-downloads={}".format(max_per_list))
     standard_commands.append("--playlist-random") if randomize else None
 
     # Get path to youtube-dl script in current environment
@@ -59,7 +58,13 @@ if __name__ == '__main__':
         playlist_path = os.path.join(videos_path, candidate)
         utils.create_folder(playlist_path)
 
-        with Popen([youtube_dl, *standard_commands, playlist], stdout=PIPE, cwd=playlist_path) as p:
+        existing_videos = os.listdir(playlist_path)
+        num_existing_videos = len(existing_videos)
+
+        max_videos = max_per_list - num_existing_videos
+
+        with Popen([youtube_dl, *standard_commands, "--max-downloads={}".format(max_videos), playlist],
+                   stdout=PIPE, cwd=playlist_path) as p:
             out, err = p.communicate()
             logger.info(out)
             logger.error(err)
