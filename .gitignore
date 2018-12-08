@@ -12,3 +12,6 @@
 
 # Compiled Python Code #
 *.pyc
+
+# Jupyter Stuff #
+.ipynb_checkpoints/

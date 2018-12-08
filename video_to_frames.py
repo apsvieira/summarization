@@ -43,7 +43,7 @@ if __name__ == '__main__':
     video_name = unidecode(re.sub('\..*', '', video_file).replace(' ', '-'))
     total_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
     if num_frames >= total_frames:
-        raise ValueError('Asked for a {} unique frames. Larger than the {} frames in the video {}.'.format(
+        raise ValueError('Asked for {} unique frames. Larger than the {} frames in video {}.'.format(
             num_frames, total_frames, video_file
         ))
 

@@ -1,5 +1,34 @@
 import os
+from random import shuffle
+
 from torchvision import datasets
+
+
+def split_clips_dataset(dataset, val_split=0.2):
+    """Split ImageClipDataset into training and validation, separating a number of videos for each.
+
+    Parameters
+    ----------
+    dataset: ImageClipDataset. Dataset to be split. Should
+    val_split: float in [0, 1], optional. Fraction of the dataset videos that will be reserved for validation.
+
+    Returns
+    -------
+    train_set, val_set: ImageClipDatasets, constructed with the same parameters as the input dataset.
+    """
+    videos = dataset.videos_per_class
+    _ = {k: shuffle(v) for k, v in videos.items()}
+
+    num_videos_per_class = {k: int(val_split * len(v)) for k, v in videos.items()}
+    val_videos = {k: v[:num_videos_per_class[k]] for k, v in videos.items()}
+    train_videos = {k: v[num_videos_per_class[k]:] for k, v in videos.items()}
+
+    val_set = ImageClipDataset(dataset.root, dataset.transform, dataset.target_transform,
+                               dataset.extensions, dataset.loader, videos=val_videos)
+    train_set = ImageClipDataset(dataset.root, dataset.transform, dataset.target_transform,
+                                 dataset.extensions, dataset.loader, videos=train_videos)
+
+    return train_set, val_set
 
 
 class ImageClipDataset:
@@ -11,9 +40,10 @@ class ImageClipDataset:
 
     def __init__(self, path, transform=None, target_transform=None,
                  extensions=datasets.folder.IMG_EXTENSIONS,
-                 loader=datasets.folder.default_loader):
+                 loader=datasets.folder.default_loader,
+                 videos=None):
         classes, class_to_idx = self._find_classes(path)
-        videos, samples = self._make_dataset(path, class_to_idx, extensions)
+        videos, samples = self._make_dataset(path, class_to_idx, extensions, videos)
 
         self.root = os.path.abspath(path)
         self.loader = loader

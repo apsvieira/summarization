@@ -4,6 +4,7 @@ import logging
 import os
 from subprocess import Popen, PIPE
 # TODO add multiprocessing support
+# TODO add verifications to ensure passed number of frames is correctly extracted
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--frames',
@@ -24,15 +25,18 @@ if __name__ == '__main__':
     multiprocess_threshold = opts.num_processes
 
     root_path = os.path.abspath(os.curdir)
-    logger = logging.getLogger("framesFromVideos",)
+    os.chdir('./data')
+    data_path = os.path.abspath(os.curdir)
+
+    logger = logging.getLogger("framesFromVideos")
     logger.setLevel('DEBUG')
 
     # Get list of directory names in current directory
     all_files = os.scandir()
     directories = [file.name for file in all_files if file.is_dir() and not file.name.startswith('.')]
 
-    for dir in directories:
-        os.chdir(dir)
+    for directory in directories:
+        os.chdir(directory)
         all_files = os.scandir()
         files = [file.name for file in all_files if not file.is_dir() and not file.name.startswith('.')
                  and not file.name.endswith('.png') and not file.name.endswith('.jpeg')]
@@ -62,4 +66,4 @@ if __name__ == '__main__':
 
         for cp in child_processes:
             cp.wait()
-        os.chdir(root_path)
+        os.chdir(data_path)
