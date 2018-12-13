@@ -35,7 +35,7 @@ class SoftMask(nn.Module):
 
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         interpolate = curry(F.interpolate)
-        self.interpolation = interpolate(scale_factor=2, mode='bilinear', align_corners=True)
+        self.interpolation = interpolate(mode='bilinear', align_corners=True)
 
         self.preprocessing = make_residual_layer(residual_block, inplanes, planes, r)
         self.horizontal_connection = make_residual_layer(residual_block, self.outplanes, planes, 1)
@@ -51,11 +51,11 @@ class SoftMask(nn.Module):
         residue = self.horizontal_connection(x)
         x = self.maxpool(x)
         x = self.core(x)
-        x = self.interpolation(x)
+        x = self.interpolation(x, size=residue.shape[-2:])
         x = x + residue
 
         x = self.postprocessing(x)
-        x = self.interpolation(x)
+        x = self.interpolation(x, size=input.shape[-2:])
         x = self.conv1x1block(x)
 
         return torch.sigmoid(x)
@@ -70,7 +70,7 @@ class AttentionModule(nn.Module):
         self.residual_block = residual_block
 
         self.preprocessing = make_residual_layer(residual_block, inplanes, planes, p)
-        self.mask_branch = SoftMask(self.outplanes, planes, r)
+        self.mask_branch = SoftMask(self.outplanes, planes, r, residual_block)
         self.trunk_branch = make_residual_layer(residual_block, self.outplanes, planes, t)
         self.postprocessing = make_residual_layer(residual_block, self.outplanes, planes, p)
 
