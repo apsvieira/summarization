@@ -17,8 +17,7 @@ def make_residual_layer(block, inplanes, planes, blocks, stride=1):
             nn.BatchNorm2d(planes * block.expansion),
         )
 
-    layers = []
-    layers.append(block(inplanes, planes, stride, downsample))
+    layers = [block(inplanes, planes, stride, downsample)]
     inplanes = planes * block.expansion
     for _ in range(1, blocks):
         layers.append(block(inplanes, planes))
